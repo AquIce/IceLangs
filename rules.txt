@@ -1,0 +1,5 @@
+*.py->Python
+*.y->Y
+*.c->C
+*.cpp->C++
+*.txt->Text
