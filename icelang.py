@@ -13,28 +13,31 @@ class NonHandledFileException(Exception):
 class IceLang:
     def __init__(self, rulefile:str) -> None:
         self.rulefile = rulefile
+        self.all_files = []
         self.rules = {}
         self.languages = {}
+        self.file_to_lang = {}
         self.file_exceptions = []
-
-    def get_all_files(self, act_dir:str=os.getcwd()) -> list:
-        all_files = []
-        self.list_files(act_dir, all_files)
-        return all_files
-        
-    def list_files(self, dir_to_search_in:str, file_list:list) -> None:
-        try:
-            os.chdir(dir_to_search_in)
-            for i in os.listdir(dir_to_search_in):
+          
+    # Lists the files
+    def list_files(self, dir_to_search_in:str=os.getcwd()) -> None:
+        os.chdir(os.path.abspath(dir_to_search_in))
+        dir_list = []
+        for i in os.listdir(os.getcwd()):
+            try:
                 if os.path.isdir(i):
-                    self.list_files(i, file_list)
+                    dir_list.append(i)
                 elif os.path.isfile(i):
-                    file_list.append(os.path.abspath(i))
+                    self.all_files.append(os.path.abspath(i))
                 else:
                     raise NonHandledFileException
-        except:
-            pass
+            except: ...
+        for j in dir_list:
+            try:
+                self.list_files(os.path.abspath(j))
+            except: ...
 
+    # Loads the rules
     def load_rules(self, rule_filename:str) -> None:
         self.file_exceptions.append(os.path.abspath(rule_filename))
         with open(rule_filename, 'r') as f:
@@ -47,19 +50,19 @@ class IceLang:
                 self.languages[lang] = 0
         self.languages['Unknown'] = 0
 
-    def get_language_iteration(self, file_to_lang:list, i:str):
+    # Adds language to self.file_lang
+    def get_language_iteration(self, i:str):
         for j in self.rules.keys():
             if i.split('.')[-1] == j.split('.')[-1]:
-                file_to_lang[i] = self.rules[j]
+                self.file_to_lang[i] = self.rules[j]
                 return
             else:
-                file_to_lang[i] = 'Unknown'
+                self.file_to_lang[i] = 'Unknown'
 
-    def get_language(self, file_to_check:list) -> dict:
-        file_to_lang = {}
-        for i in file_to_check:
-            self.get_language_iteration(file_to_lang, i)
-        return file_to_lang
+    # Apply self.get_language_iteration to each file
+    def get_language(self) -> None:
+        for i in self.all_files:
+            self.get_language_iteration(i)
         
     def get_file_length(self, filename:str) -> int:
         with open(filename, 'r') as f:
@@ -81,20 +84,27 @@ class IceLang:
             total += dct[i]
         return total
 
-    def calculate_percentage(self, dct:dict) -> dict:
+    def get_file_by_lang(self):
+        for i in self.file_to_lang.keys():
+            for j in self.rules.keys():
+                ...
+
+    def calculate_percentage(self) -> dict:
         percentages = {}
-        tot = self.char_sum(dct)
-        for i in dct.keys():
-            percentages[i] = dct[i] / tot * 100
+        tot = self.char_sum(self.languages)
+        for i in self.languages.keys():
+            percentages[i] = self.languages[i] / tot * 100
         return percentages
         
-    def print_percentages(self):
-        for i in self.calculate_percentage(self.languages).keys():
-            temp = self.calculate_percentage(self.languages)[i]
+    def print_percentages(self) -> None:
+        for i in self.calculate_percentage().keys():
+            temp = self.calculate_percentage()[i]
             if temp != 0:
                 print(f'{i} : {temp:.2f}%')
 
     def run(self):
         self.load_rules('rules.txt')
-        self.get_langs_chars(self.get_language(self.get_all_files()))
+        self.list_files()
+        self.get_language()
+        self.get_langs_chars(self.file_to_lang)
         self.print_percentages()
