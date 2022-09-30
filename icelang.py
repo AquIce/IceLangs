@@ -39,6 +39,7 @@ class IceLang:
 
     # Loads the rules
     def load_rules(self, rule_filename:str) -> None:
+        # Use https://pygithub.readthedocs.io/en/latest/ to load online templates
         self.file_exceptions.append(os.path.abspath(rule_filename))
         with open(rule_filename, 'r') as f:
             content = f.readlines()
